@@ -13,8 +13,8 @@ from glob import glob
 import matplotlib.pyplot as plt
 
 
-path_train = "/home/user1/DB/librispeech_360/LibriSpeech/train-clean-100"
-path_test = "/home/user1/DB/librispeech_360/LibriSpeech/test-clean"
+path_train = "/root/mydir/hdd/librispeech_360/LibriSpeech/train-clean-100"
+path_test = "/root/mydir/hdd/librispeech_360/LibriSpeech/LibriSpeech/test-clean"
 
 
 def parsingDB(path, file_extension):
@@ -44,7 +44,7 @@ def gen_chapterlist():
     db_info = {"nSpeakers" : nSpeakers,     
             "nChapters_per_speakers" : nChapters_per_speakers,
             "nUtterances_per_chapters_per_speakers" : nUtterances_per_chapters_per_speakers
-            }
+    }
     chapterlist = []
     for chapters in list(db.values()):  # chapters per speaker
         chapterlist += list(chapters.values())  # all the utterences
