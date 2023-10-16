@@ -55,28 +55,27 @@ def gen_chapterlist():
         pickle.dump(db_info, f2)
         
 
-def vad_test():
+def gen_signal_dicts(speech, fs, rir):
     
-    datadict = {"s"}
-    
-    speech, fs = sf.read("1334-135589-0016.flac")
+    speech, fs = sf.read("./files/1334-135589-0016.flac")
 
     vad = webrtcvad.Vad()
     vad.set_mode(2)
-    vad_out = np.zeros_like(speech)
+    speech_vad = np.zeros_like(speech)
     vad_frame_len = int(10e-3 * fs)
     n_vad_frames = len(speech) // vad_frame_len
     
+    speech_vad_start = 987654321
     for idx in range(n_vad_frames):
-        frame = speech[idx * vad_frame_len : (idx+1) * vad_frame_len]
+        index = idx * vad_frame_len
+        frame = speech[index : index + vad_frame_len]
         frame_bytes = (frame * 32767).astype('int16').tobytes()
-        vad_out[idx * vad_frame_len : (idx+1) * vad_frame_len] = vad.is_speech(frame_bytes, fs)
+        speech_vad[index : index + vad_frame_len] = vad.is_speech(frame_bytes, fs)
         
-    print(list(vad_out).count(1))
-    plt.subplot(5, 1, 1)
-    plt.plot(vad_out)
-    
-    rirs = np.load("training_RIRs.npy")
+        if speech_vad[index] == 1 and index < speech_vad_start:
+            speech_vad_start = index
+        
+    rirs = np.load("./files/training_RIRs.npy")
     doas = [5]
     for d in doas:
         h = rirs[d, 0, 0, :, :]
@@ -85,25 +84,37 @@ def vad_test():
         # sf.write("vad_test.wav", signals[:, 0], 16000)
         # print(signals.shape)
     
-    for i in range(4):
-        speech = signals[:, i]
-        vad_out = np.zeros_like(speech)
-        vad_frame_len = int(10e-3 * fs)
-        n_vad_frames = len(speech) // vad_frame_len
-        
-        for idx in range(n_vad_frames):
-            frame = speech[idx * vad_frame_len : (idx+1) * vad_frame_len]
-            frame_bytes = (frame * 32767).astype('int16').tobytes()
-            vad_out[idx * vad_frame_len : (idx+1) * vad_frame_len] = vad.is_speech(frame_bytes, fs)
-            
-        print(list(vad_out).count(1))
-        plt.subplot(5, 1, i+2)
-        plt.plot(vad_out)
-        
-    plt.tight_layout()
-    plt.savefig("vadtest2.png")
-        
+    signals_vad = np.zeros_like(signals[:, 0])
+    
+    # we shift the clean vad only for the 0th channel
+    signal = signals[:, 0]
+    vad_frame_len = int(10e-3 * fs)
+    n_vad_frames = len(signal) // vad_frame_len
+    
+    for idx in range(n_vad_frames):
+        index = idx * vad_frame_len
+        frame = signal[index : index + vad_frame_len]
+        frame_bytes = (frame * 32767).astype('int16').tobytes()
+    
+        if vad.is_speech(frame_bytes, fs):
+            signals_vad[index : index + len(speech_vad[speech_vad_start:])] = speech_vad[speech_vad_start:]
+            break
+    
+    datadict = {"signals" : signals,
+                "vad" : signals_vad,
+                "doa" : doas[0]*5,
+                "room_num" : 0,
+                "dist" : 1}
 
+    # with open('./files/test_data_1.pickle', 'wb') as f:
+    #     pickle.dump(datadict, f)
+        
+    # with open('./files/test_data_1.pickle', 'rb') as f:
+    #     testdict = pickle.load(f)
+    #     print(testdict["signals"].shape)
+    #     print("room num", testdict["room_num"])
+    #     print(np.count_nonzero(testdict["vad"]))
+        
 
 def main():
     # gen_chapterlist()
@@ -111,7 +122,8 @@ def main():
     # with open('chapterlist.pickle', 'rb') as f:
     #     chapterlist = pickle.load(f)
     
-    vad_test()
+    # vad_test()
+    pass
     
 
 if __name__ == '__main__':
