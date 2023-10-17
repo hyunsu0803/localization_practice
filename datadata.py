@@ -61,14 +61,15 @@ def gen_signal_vad(signal, fs, clean_vad, clean_vad_start):
 
 
 # main
+speech_num = 1
 for s in speeches:
     speech, fs = sf.read(s)
     clean_vad, clean_vad_start = gen_clean_vad(speech, fs)
-    speech_num = 1
+    
+    signal_num = 1
     for rn in [0, 1]:
         for dist in [0, 1]:
             for doa in range(37):
-                signal_num = 1
                 datadict = {"doa" : doa*5,
                             "room_num" : rn,
                             "dist" : dist+1}
@@ -84,6 +85,10 @@ for s in speeches:
                 datadict["signals"] = signals
                 datadict["vad"] = signal_vad
 
-                file_path = ["./signal_samples/", str(speech_num), "_", str(signal_num) ]
-                with open(file_path)
+                file_path = "".join(["./signal_samples/", str(speech_num), "_", str(signal_num), ".pickle"])
+                with open(file_path, 'wb') as f:
+                    pickle.dump(datadict, f)
+                
+                signal_num += 1
+    speech_num += 1
 
