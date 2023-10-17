@@ -46,11 +46,6 @@ def gen_signal_vad(signal, fs, clean_vad, clean_vad_start):
         frame_bytes = (frame * 32767).astype('int16').tobytes()
     
         if vad.is_speech(frame_bytes, fs):
-            # print("clean vad start", clean_vad_start)
-            # print("len(clean_vad[clean_vad_start:])", len(clean_vad[clean_vad_start:]))
-            # print("len(signal vad)", len(signal_vad))
-            # print("len(signal_vad[index:])", len(signal_vad[index:]))
-            # print("index", index)
             if len(signal_vad[index:]) >= len(clean_vad[clean_vad_start:]):
                 signal_vad[index : index + len(clean_vad[clean_vad_start:])] = clean_vad[clean_vad_start:]
             else:
