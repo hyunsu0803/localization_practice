@@ -16,9 +16,9 @@ fs = 16000
 Nf = 512
 win_size = 32 * 16  # 512 : 32ms * 16kHz
 hop_size = win_size // 2
-
 s_len = fs*2
 
+name = 1
 for data_path in train_data:
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
@@ -31,14 +31,14 @@ for data_path in train_data:
     clipped_signals = clipped_signals.T
     
     # 2. STFT
-    f, t, stft_signal = ss.stft(x=clipped_signals,      # (4, 257, 126)
+    f, t, stft_signal = ss.stft(x=clipped_signals,      # (4, 257, 126) (channel, freq, time)
                                 fs=fs, 
                                 nperseg=win_size, 
                                 nfft=Nf, 
-                                noverlap=hop_size)   # f & t for plot (may be)
+                                noverlap=hop_size)      # f & t for plot (may be)
     
     # 3. phase map
-    for t in range(stft_signal.shape[2]):
+    for t in range(stft_signal.shape[2]):               # for each time frame
         initial_map = stft_signal[:, :, t]
         initial_map = torch.tensor(initial_map, dtype=torch.cfloat)
         phase_map = torch.angle(initial_map)
@@ -54,9 +54,12 @@ for data_path in train_data:
         else:
             target = torch.zeros(37)
         
+        
+        # 5. phase map & target dump
         output = (phase_map, target)
-
-        exit()
-    
-    
-    exit()
+        output_path = "".join(['./phasemap_samples/', str(name), '.pickle'])
+        with open(output_path, 'wb') as f:
+            pickle.dump(output, f)
+        
+        name += 1
+        
