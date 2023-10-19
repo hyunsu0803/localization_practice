@@ -47,7 +47,7 @@ for data_path in train_data:
         # 4. target generation
         sigvad = np.array(data['vad'])
         sigvad = sigvad[index + hop_size * t : index + hop_size * (t+2)]
-        if np.count_nonzero(sigvad) > len(sigvad) * 2//3:
+        if np.count_nonzero(sigvad) > len(sigvad) * 2/3:
             doa = data['doa']
             target = torch.zeros(37)
             target[doa//5] = 1

@@ -14,8 +14,8 @@ class PhaseMapDataset(Dataset):
         
         
 def main():
-    signal_path = "./signal_samples"
-    train_set = PhaseMapDataset(signal_path)
+    phmp_path = "./phasemap_samples"
+    train_set = PhaseMapDataset(phmp_path)
     train_dataloader = DataLoader(train_set, batch_size=128, shuffle=True)
     
     for b_x, b_y in train_dataloader:
