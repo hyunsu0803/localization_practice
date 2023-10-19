@@ -1,21 +1,27 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pickle
+import os
 
 class PhaseMapDataset(Dataset):
     def __init__(self, path):
-        pass
+        self.traindata = os.listdir(path)
+        self.length = len(self.traindata)
+        self.path = path
 
     def __len__(self):
-        pass
+        return self.length
 
     def __getitem__(self, idx):
-        pass
+        data = self.traindata[idx]
+        with open(os.path.join(self.path, data), 'rb') as f:
+            (phmp, target) = pickle.load(f)
+        return phmp, target
         
         
 def main():
-    phmp_path = "./phasemap_samples"
-    train_set = PhaseMapDataset(phmp_path)
+    train_path = "./phasemap_samples"
+    train_set = PhaseMapDataset(train_path)
     train_dataloader = DataLoader(train_set, batch_size=128, shuffle=True)
     
     for b_x, b_y in train_dataloader:
@@ -25,6 +31,4 @@ def main():
     
 
 if __name__ == '__main__':
-    a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    print(a[:-5])
-    # main()
+    main()
