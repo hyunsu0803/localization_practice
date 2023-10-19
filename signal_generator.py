@@ -7,59 +7,37 @@ import pickle
 from glob import glob
 import matplotlib.pyplot as plt
 
-path_train = "/root/mydir/hdd/librispeech_360/LibriSpeech/train-clean-100"
-path_test = "/root/mydir/hdd/librispeech_360/LibriSpeech/LibriSpeech/test-clean"
 
-speeches = glob("./speech_samples/*.flac")
-
-
-def gen_clean_vad(speech, fs):
+def gen_anechoic_vad(speech, fs):
     vad = webrtcvad.Vad()
     vad.set_mode(2)
-    clean_vad = np.zeros_like(speech)
+    anechoic_vad = np.zeros_like(speech)
     vad_frame_len = int(10e-3 * fs)
     n_vad_frames = len(speech) // vad_frame_len
     
-    clean_vad_start = 987654321
     for idx in range(n_vad_frames):
         index = idx * vad_frame_len
         frame = speech[index : index + vad_frame_len]
         frame_bytes = (frame * 32767).astype('int16').tobytes()
-        clean_vad[index : index + vad_frame_len] = vad.is_speech(frame_bytes, fs)
-        
-        if clean_vad[index] == 1 and index < clean_vad_start:
-            clean_vad_start = index
+        anechoic_vad[index : index + vad_frame_len] = vad.is_speech(frame_bytes, fs)
 
-    return clean_vad, clean_vad_start
+    return anechoic_vad    
 
 
-def gen_signal_vad(signal, fs, clean_vad, clean_vad_start):
-    vad = webrtcvad.Vad()
-    vad.set_mode(2)
-    signal_vad = np.zeros_like(signal)
-    vad_frame_len = int(10e-3 * fs)
-    n_vad_frames = len(signal) // vad_frame_len
-    
-    for idx in range(n_vad_frames):
-        index = idx * vad_frame_len
-        frame = signal[index : index + vad_frame_len]
-        frame_bytes = (frame * 32767).astype('int16').tobytes()
-    
-        if vad.is_speech(frame_bytes, fs):
-            if len(signal_vad[index:]) >= len(clean_vad[clean_vad_start:]):
-                signal_vad[index : index + len(clean_vad[clean_vad_start:])] = clean_vad[clean_vad_start:]
-            else:
-                signal_vad[index:] = clean_vad[clean_vad_start: clean_vad_start + len(signal_vad[index:])]
-            break
+def gen_signal_vad(rir, anechoic_vad, signal_len):
+    peakidx = np.argmax(np.abs(rir))
+    signal_vad = np.zeros(signal_len)
+    signal_vad[peakidx : peakidx + len(anechoic_vad)] = anechoic_vad
 
     return signal_vad
 
 
 # main
+speeches = glob("./speech_samples/*.flac")
 speech_num = 1
 for s in speeches:
     speech, fs = sf.read(s)
-    clean_vad, clean_vad_start = gen_clean_vad(speech, fs)
+    anechoic_vad = gen_anechoic_vad(speech, fs)
     
     signal_num = 1
     for rn in [0, 1]:
@@ -74,12 +52,13 @@ for s in speeches:
                 h = rirs[doa, rn, dist, :, :]
                 signals = ss.convolve(h[:, None, :], speech[:, None, None])
                 signals = signals.squeeze()
+                
                 # gen signal vad
-                signal_vad = gen_signal_vad(signals[:, 0], fs, clean_vad, clean_vad_start)
+                signal_vad = gen_signal_vad(h[:, 0], anechoic_vad, len(signals[:, 0]))
 
+                # save datadict
                 datadict["signals"] = signals
                 datadict["vad"] = signal_vad
-
                 file_path = "".join(["./signal_samples/", str(speech_num), "_", str(signal_num), ".pickle"])
                 with open(file_path, 'wb') as f:
                     pickle.dump(datadict, f)

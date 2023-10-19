@@ -15,27 +15,30 @@ class CNN(nn.Module):
         self.conv3 = nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(2, 1))
         self.bn3 = nn.BatchNorm2d(num_features=16)
         
-        self.fc1 = nn.Linear(257*16, 512)
+        self.fc1 = nn.Linear(257*16, 64)
         # self.fc1 = nn.Linear(44800, 512)
-        self.fc2 = nn.Linear(512, 512)
-        self.out = nn.Linear(512, 37)
+        self.fc2 = nn.Linear(64, 64)
+        self.out = nn.Linear(64, 37)
         
         self.dropout = nn.Dropout(0.5)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         
     def forward(self, x):
+        
+        print(x.shape)
+        exit(1)
         x1 = self.relu(self.bn1(self.conv1(x)))
         x2 = self.relu(self.bn2(self.conv2(x1)))
-        x3 = self.dropout(self.relu(self.bn3(self.conv3(x2))))
+        x3 = self.relu(self.bn3(self.conv3(x2)))
         
         # print("x3.shape", x3.shape)
         x3 = x3.reshape(x3.shape[0], -1)
         # print("x3 reshape", x3.shape)
        
-        x4 = self.dropout(self.relu(self.fc1(x3)))
-        x5 = self.dropout(self.relu(self.fc2(x4)))
-        x6 = self.sigmoid(self.out(x5))
+        x4 = self.relu(self.fc1(x3))
+        # x5 = self.relu(self.fc2(x4))
+        x6 = self.sigmoid(self.out(x4))
         # print("after sigmoid", x6)
         return x6
 

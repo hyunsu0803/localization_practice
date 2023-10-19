@@ -6,7 +6,7 @@ import random
 import scipy.signal as ss
 from torch_stft import STFT
 import torch
-
+import matplotlib.pyplot as plt
 
 signal_path = './signal_samples'
 train_data = glob.glob(os.path.join(signal_path, '*.pickle'))
@@ -36,6 +36,14 @@ for data_path in train_data:
                                 nperseg=win_size, 
                                 nfft=Nf, 
                                 noverlap=hop_size)      # f & t for plot (may be)
+    # print(stft_signal.shape)
+    # print(stft_signal.dtype)
+    # print(np.sum(clipped_signals**2, axis=0))
+    # mag=np.abs(stft_signal[0])
+    # plt.imshow(mag, aspect='auto')
+    # plt.tight_layout()
+    # plt.savefig('./files/mag.png', dpi=300)
+    # exit(1)
     
     # 3. phase map
     for t in range(stft_signal.shape[2]):               # for each time frame
@@ -53,6 +61,10 @@ for data_path in train_data:
             target[doa//5] = 1
         else:
             target = torch.zeros(37)
+        print(target.shape)
+        plt.imshow(target, aspect='auto')
+        plt.savefig('./files/stft_vad.png')
+        exit(1)
         
         
         # 5. phase map & target dump
