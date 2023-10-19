@@ -17,9 +17,10 @@ Nf = 512
 win_size = 32 * 16  # 512 : 32ms * 16kHz
 hop_size = win_size // 2
 s_len = fs*2
+n_doa_class = 37
 
 name = 1
-for data_path in train_data:
+for data_path in train_data:    # for 1 set of signals
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     
@@ -36,42 +37,50 @@ for data_path in train_data:
                                 nperseg=win_size, 
                                 nfft=Nf, 
                                 noverlap=hop_size)      # f & t for plot (may be)
-    # print(stft_signal.shape)
-    # print(stft_signal.dtype)
+    
+    # 3. phase map
+    phase_map = torch.angle(torch.tensor(stft_signal, dtype=torch.cfloat))  # (4, 257, 126)
+
+    
+    # 4. target generation
+    n_time_frame = stft_signal.shape[2]
+    doa = data['doa']
+    
+    target = torch.zeros((n_doa_class, n_time_frame))
+    target[doa//5, :] = 1
+    
+    clipped_vad = data['vad'][index : index + s_len]
+    frame_vad = torch.zeros(n_time_frame)
+    for nt in range(n_time_frame):
+        fv = np.array(clipped_vad[hop_size*nt : hop_size*(nt+2)])
+        if np.count_nonzero(fv) > len(fv) * 2/3:
+            frame_vad[nt] = 1
+    frame_vad = torch.unsqueeze(frame_vad, dim=0)
+    target = target * frame_vad     # (37, 126)
+    
+    
+    # 5. phase map & target dump
+    output = (phase_map, target)
+    output_path = "".join(['./phasemap_samples/', str(name), '.pickle'])
+    with open(output_path, 'wb') as f:
+        pickle.dump(output, f)
+    
+    name += 1
+    
+    
+    # print(target.shape)
+    # print(frame_vad.shape)
+    # plt.subplot(2, 1, 1)
+    # plt.imshow(target, aspect='auto')
+    # plt.subplot(2, 1, 2)
+    # plt.plot(torch.squeeze_copy(frame_vad))
+    # plt.tight_layout()
+    # plt.savefig('./files/targetNvad.png')
+    # exit()
+    
     # print(np.sum(clipped_signals**2, axis=0))
     # mag=np.abs(stft_signal[0])
     # plt.imshow(mag, aspect='auto')
     # plt.tight_layout()
     # plt.savefig('./files/mag.png', dpi=300)
     # exit(1)
-    
-    # 3. phase map
-    for t in range(stft_signal.shape[2]):               # for each time frame
-        initial_map = stft_signal[:, :, t]
-        initial_map = torch.tensor(initial_map, dtype=torch.cfloat)
-        phase_map = torch.angle(initial_map)
-        
-        
-        # 4. target generation
-        sigvad = np.array(data['vad'])
-        sigvad = sigvad[index + hop_size * t : index + hop_size * (t+2)]
-        if np.count_nonzero(sigvad) > len(sigvad) * 2/3:
-            doa = data['doa']
-            target = torch.zeros(37)
-            target[doa//5] = 1
-        else:
-            target = torch.zeros(37)
-        print(target.shape)
-        plt.imshow(target, aspect='auto')
-        plt.savefig('./files/stft_vad.png')
-        exit(1)
-        
-        
-        # 5. phase map & target dump
-        output = (phase_map, target)
-        output_path = "".join(['./phasemap_samples/', str(name), '.pickle'])
-        with open(output_path, 'wb') as f:
-            pickle.dump(output, f)
-        
-        name += 1
-        
