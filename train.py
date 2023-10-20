@@ -20,7 +20,7 @@ train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True
 
 model = CNN().to(device).train()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
-criterion = nn.CrossEntropyLoss()
+criterion = nn.BCELoss()
 
 epochs = 30
 
@@ -31,7 +31,7 @@ for epoch in range(epochs):
     total_batch_num = len(train_dataloader)
 
     for b_x, b_y in train_dataloader:
-        b_x = torch.unsqueeze(b_x, dim=1)
+        # b_x = torch.unsqueeze(b_x, dim=1)
         # print(b_x.shape)
         logits = model(b_x.to(device))
         loss = criterion(logits, b_y.to(device))
