@@ -4,6 +4,8 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.nn as nn
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 if torch.cuda.is_available():
@@ -12,7 +14,7 @@ else:
     device = torch.device('cpu')
     
 
-batch_size = 128
+batch_size = 32
 train_path = "./phasemap_samples"
 
 train_dataset = PhaseMapDataset(train_path)
@@ -26,13 +28,12 @@ epochs = 30
 
 model.train()
 for epoch in range(epochs):
+    it = 0
     model.train()
     avg_cost = 0
     total_batch_num = len(train_dataloader)
-
     for b_x, b_y in train_dataloader:
-        # b_x = torch.unsqueeze(b_x, dim=1)
-        # print(b_x.shape)
+        it += 1
         logits = model(b_x.to(device))
         loss = criterion(logits, b_y.to(device))
 
@@ -40,4 +41,29 @@ for epoch in range(epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        
+        if it % 10 == 0:
+            # save images of logits
+            cpu_logits = np.array(logits.clone().detach().cpu())
+            avg_logits = np.sum(cpu_logits, axis=0, keepdims=False) / batch_size
+            cpu_b_y = np.array(b_y.clone().detach().cpu())
+            plt.subplot(2, 1, 1)
+            plt.imshow(cpu_b_y[0, :, :])
+            plt.subplot(2, 1, 2)
+            plt.imshow(avg_logits)
+            plt.savefig("./target_n_logits2/%d_%d.png" % (epoch+1, it//10))
+            
+            # get accuracy
+            max_logits = np.argmax(cpu_logits, axis=1)
+            max_b_y = np.argmax(cpu_b_y, axis=1)
+            difference = np.abs(max_b_y - max_logits)   # (batch_size, 126)
+            print(difference.shape)
+            a = difference <= np.ones_like(difference)
+            n_correct = np.count_nonzero(a)
+            total = difference.shape[0] * difference.shape[1]
+            print('Accuracy : %d / %d' % (n_correct, total))
+            
+        
+        
     print('Epoch : {} / {}, cost : {}'.format(epoch+1, epochs, avg_cost))
+    

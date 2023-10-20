@@ -60,8 +60,7 @@ for data_path in train_data:    # for 1 set of signals
     
     # 5. phase map & target dump
     output = (phase_map, target)
-    output_path = "".join(['./phasemap_samples/', str(name), '.pickle'])
-    with open(output_path, 'wb') as f:
+    with open('./phasemap_samples/%d.pickle' % name, 'wb') as f:
         pickle.dump(output, f)
     
     name += 1
