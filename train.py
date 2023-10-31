@@ -31,6 +31,8 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, sh
 model = CNN().to(device).train()
 optimizer = optim.Adam(model.parameters(), lr=0.001,)# weight_decay=1.0e-6)
 criterion = nn.BCELoss()
+schedular = optim.lr_scheduler.LambdaLR(optimizer=optimizer,
+                                        lr_lambda=lambda epoch: 0.95 ** epoch)
 
 epochs = 40
 val_interval = 1
@@ -53,32 +55,37 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         
+        # get accuracy
         if it % 10 == 0:
             # save images of logits
             cpu_logits = np.array(logits.clone().detach().cpu())    # (B, 37, 126)
-            avg_logits = np.sum(cpu_logits, axis=0, keepdims=False) / batch_size    # (37, 126)
-            cpu_b_y = np.array(b_y.clone().detach().cpu())
+            avg_logits = np.sum(cpu_logits, axis=0, keepdims=False) #/ batch_size    # (37, 126)
+            cpu_b_y = np.array(b_y.clone().detach().cpu())          # (B, 37, 126)
+
             plt.subplot(2, 1, 1)
             plt.imshow(cpu_b_y[0, :, :], vmin=0.0, vmax=1.0,)
             plt.colorbar()
             plt.subplot(2, 1, 2)
             plt.imshow(avg_logits,)# vmin=0.0, vmax=1.0)
             plt.colorbar()
-            
             plt.savefig("./target_n_logits3/%d_%d.png" % (epoch+1, it//10))
             
             # get accuracy
-            max_logits = np.argmax(cpu_logits, axis=1)  # (B, 37, 126) => (B, 126)
-            max_b_y = np.argmax(cpu_b_y, axis=1)        # (B, 37, 126) => (B, 126)
-            difference = np.abs(max_b_y - max_logits)   # (B, 126)
-            # print(difference.shape)
-            a = difference <= np.ones_like(difference)
+            argmax_logits = np.argmax(cpu_logits, axis=1)       # (B, 37, 126) => (B, 126)
+            argmax_b_y = np.argmax(cpu_b_y, axis=1)             # (B, 37, 126) => (B, 126)
+            difference = np.abs(argmax_b_y - argmax_logits)     # (B, 126)
+            a = difference <= np.ones_like(difference)          # (B, 126)
+            if np.max(argmax_b_y) > np.min(argmax_b_y):     # if the target is not the DOA 0
+                a = a * argmax_b_y                          # vad masking
             n_correct = np.count_nonzero(a)
-            total = difference.shape[0] * difference.shape[1]
-            print('Accuracy : %d / %d' % (n_correct, total))
+            n_active_frame = np.count_nonzero(argmax_b_y)
+
+            print('Accuracy : %d / %d' % (n_correct, n_active_frame))
     
     print('Epoch : {} / {}, cost : {}'.format(epoch+1, epochs, avg_cost))
+    schedular.step()
     
+    # validation
     if epoch % val_interval == 0:
         model.eval()
         val_cost = 0

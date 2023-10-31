@@ -30,8 +30,18 @@ for data_path in train_data:    # for 1 set of signals
     clipped_signals = signals[index : index + s_len, :]
     clipped_signals = clipped_signals.T
     
+    # 1.5. add noise
+    snr = 20
+    noise_audio = np.random.standard_normal(clipped_signals.shape)
+    
+    clean_db = 10 * np.log10(np.mean(clipped_signals**2)+1e-4)
+    noise_db = 10 * np.log10(np.mean(noise_audio**2)+1e-4)
+    noise = np.sqrt(10**((clean_db - noise_db - snr) / 10)) * noise_audio
+    noisy_signals = clipped_signals + noise
+    
+    
     # 2. STFT
-    f, t, stft_signal = ss.stft(x=clipped_signals,      # (4, 257, 126) (channel, freq, time)
+    f, t, stft_signal = ss.stft(x=noisy_signals,      # (4, 257, 126) (channel, freq, time)
                                 fs=fs, 
                                 nperseg=win_size, 
                                 nfft=Nf, 
@@ -60,7 +70,7 @@ for data_path in train_data:    # for 1 set of signals
     
     # 5. phase map & target dump
     output = (phase_map, target)
-    with open('./phasemap_samples/%d.pickle' % name, 'wb') as f:
+    with open('./phasemap_samples/%d_%ddB.pickle' % (name, snr), 'wb') as f:
         pickle.dump(output, f)
     
     name += 1
