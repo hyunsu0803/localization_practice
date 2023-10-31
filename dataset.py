@@ -5,7 +5,23 @@ import os
 
 class PhaseMapDataset(Dataset):
     def __init__(self, path):
-        self.traindata = os.listdir(path)
+        self.traindata = os.listdir(path)[:-32*4]
+        self.length = len(self.traindata)
+        self.path = path
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        data = self.traindata[idx]
+        with open(os.path.join(self.path, data), 'rb') as f:
+            (phmp, target) = pickle.load(f)
+        return phmp, target
+    
+    
+class ValidationDataset(Dataset):
+    def __init__(self, path):
+        self.traindata = os.listdir(path)[-32*4:-32]
         self.length = len(self.traindata)
         self.path = path
 
