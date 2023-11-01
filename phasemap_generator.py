@@ -31,7 +31,7 @@ for data_path in train_data:    # for 1 set of signals
     clipped_signals = clipped_signals.T
     
     # 1.5. add noise
-    snr = 20
+    snr = 30
     noise_audio = np.random.standard_normal(clipped_signals.shape)
     
     clean_db = 10 * np.log10(np.mean(clipped_signals**2)+1e-4)
@@ -70,7 +70,10 @@ for data_path in train_data:    # for 1 set of signals
     
     # 5. phase map & target dump
     output = (phase_map, target)
-    with open('./phasemap_samples/%d_%ddB.pickle' % (name, snr), 'wb') as f:
+    output_path = './phasemap_samples2'
+    if not os.path.exists(output_path): 
+        os.makedirs(output_path)
+    with open('%s/%d_%ddB.pickle' % (output_path, name, snr), 'wb') as f:
         pickle.dump(output, f)
     
     name += 1

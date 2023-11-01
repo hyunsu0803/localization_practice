@@ -33,6 +33,21 @@ class ValidationDataset(Dataset):
         with open(os.path.join(self.path, data), 'rb') as f:
             (phmp, target) = pickle.load(f)
         return phmp, target
+    
+class TestDataset(Dataset):
+    def __init__(self, path):
+        self.traindata = os.listdir(path)[-16:]
+        self.length = len(self.traindata)
+        self.path = path
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        data = self.traindata[idx]
+        with open(os.path.join(self.path, data), 'rb') as f:
+            (phmp, target) = pickle.load(f)
+        return phmp, target
         
         
 def main():

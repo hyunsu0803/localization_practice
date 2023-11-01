@@ -20,7 +20,7 @@ else:
     
 
 batch_size = 16
-train_path = "./phasemap_samples"
+train_path = "./phasemap_samples2"
 
 train_dataset = PhaseMapDataset(train_path)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -29,7 +29,7 @@ validation_dataset = ValidationDataset(train_path)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
 model = CNN().to(device).train()
-optimizer = optim.Adam(model.parameters(), lr=0.001,)# weight_decay=1.0e-6)
+optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1.0e-6)
 criterion = nn.BCELoss()
 schedular = optim.lr_scheduler.LambdaLR(optimizer=optimizer,
                                         lr_lambda=lambda epoch: 0.95 ** epoch)
@@ -68,7 +68,7 @@ for epoch in range(epochs):
             plt.subplot(2, 1, 2)
             plt.imshow(avg_logits,)# vmin=0.0, vmax=1.0)
             plt.colorbar()
-            plt.savefig("./target_n_logits3/%d_%d.png" % (epoch+1, it//10))
+            plt.savefig("./target_n_logits/%d_%d.png" % (epoch+1, it//10))
             
             # get accuracy
             argmax_logits = np.argmax(cpu_logits, axis=1)       # (B, 37, 126) => (B, 126)
