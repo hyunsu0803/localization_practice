@@ -5,7 +5,7 @@ import os
 
 class PhaseMapDataset(Dataset):
     def __init__(self, path):
-        self.traindata = os.listdir(path)[:-32*4]
+        self.traindata = os.listdir(path)[:-16*4]
         self.length = len(self.traindata)
         self.path = path
 
@@ -21,7 +21,7 @@ class PhaseMapDataset(Dataset):
     
 class ValidationDataset(Dataset):
     def __init__(self, path):
-        self.traindata = os.listdir(path)[-32*4:-32]
+        self.traindata = os.listdir(path)[-16*4:-16]
         self.length = len(self.traindata)
         self.path = path
 
