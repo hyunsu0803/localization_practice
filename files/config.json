@@ -2,31 +2,31 @@
     "1": {
         "dim" : "6 6 2.7",
         "rt60" : 0.3,
-        "mcenter" : "3 2 1",
+        "mcenter" : 0,
         "num" : 1
     },
     "2": {
         "dim" : "5 4 2.7",
         "rt60" : 0.2,
-        "mcenter" : "3 2 1",
+        "mcenter" : 0,
         "num" : 2
     },
     "3": {
         "dim" : "10 6 2.7",
         "rt60" : 0.8,
-        "mcenter" : "3 2 1",
+        "mcenter" : 0,
         "num" : 3
     },
     "4": {
         "dim" : "8 3 2.7",
         "rt60" : 0.4,
-        "mcenter" : "3 2 1",
+        "mcenter" : 0,
         "num" : 4
     },
     "5": {
         "dim" : "8 5 2.7",
         "rt60" : 0.6,
-        "mcenter" : "3 2 1",
+        "mcenter" : 0,
         "num" : 5
     }
 }
