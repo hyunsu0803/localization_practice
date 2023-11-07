@@ -65,18 +65,19 @@ class RIR:
         
 def main():
     
-    with open('./files/config.json', 'r') as f:
+    with open('./data/train/config.json', 'r') as f:
         config = json.load(f)
     
     rir = RIR()
     for n in range(len(config)):
         r = config[str(n+1)]
-        r["dim"] = np.array([float(i) for i in r['dim'].split()])
         
+        r["dim"] = np.array([float(i) for i in r['dim'].split()])
         x = random.uniform(2, r['dim'][0]-2)
         y = random.uniform(2, r['dim'][1]-2)
         z = random.uniform(1.5, 1.8)
         r["mcenter"] = np.array([x, y, z])
+        r["num"] = n+1
         
         rir.generate_rir(r)
         
