@@ -59,7 +59,7 @@ class MicSignal:
             signal_num = 1
             for room in rooms:
                 rirs = np.load(room)
-                for dist in [1, 2]:
+                for dist in range(rirs.shape[1]):
                     for doa in range(37):
                         # rir convolution
                         h = rirs[doa, dist, :, :]
@@ -72,7 +72,7 @@ class MicSignal:
 
                         # save datadict
                         datadict = {}
-                        datadict['doa'] = doa * 5
+                        datadict["doa"] = doa * 5
                         datadict["signals"] = signals
                         datadict["vad"] = signal_vad
                         
@@ -84,25 +84,37 @@ class MicSignal:
             speech_num += 1
             
 
-def main():
+def call_micsignal(speeches, rooms, path):
     micsignal = MicSignal()
+
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+
+    print("Preparing the training data...")
+
+    speeches = glob(speeches, recursive=True)
+    rooms = glob(rooms)
+
+    print("Training data is prepared.")
+    
+    micsignal.conv_n_add(speeches, rooms, path)
+
+
+
+def main():
     
     # training data generation
     train_speeches = "/root/mydir/hdd/librispeech_360/LibriSpeech/train-clean-100/**/*.flac"
-    train_rooms = "data/train/*.npy"
+    train_rooms = "rir_dir/train/*.npy"
     save_path = "/root/mydir/hdd/training_data/mic_signal"
-    if not os.path.exists(save_path):
-        os.makedirs(save_path, exist_ok=True)
-    print("Preparing the training data...")
-    speeches = glob(train_speeches, recursive=True)
-    rooms = glob(train_rooms)
-    print("Training data is prepared.")
-    
-    micsignal.conv_n_add(speeches, rooms, save_path)
-    
-        
+    # call_micsignal(train_speeches, train_rooms, save_path)
+
     # validation data generation
-    
+    train_speeches = "/root/mydir/hdd/librispeech_360/LibriSpeech/dev-clean/**/*.flac"
+    train_rooms = "rir_dir/validation/*.npy"
+    save_path = "/root/mydir/hdd/vadid_data/mic_signal"
+    call_micsignal(train_speeches, train_rooms, save_path)
+
     # test data generation
     
     

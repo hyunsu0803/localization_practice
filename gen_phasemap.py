@@ -62,7 +62,7 @@ for data_path in tqdm(train_data):    # for 1 set of signals
     
     # 5. phase map & target dump
     output = (phase_map, target)
-    output_path = '/root/mydir/hdd/trainind_data/phasemap'
+    output_path = '/root/mydir/hdd/training_data/phasemap'
     if not os.path.exists(output_path): 
         os.makedirs(output_path)
     with open('%s/%d.pickle' % (output_path, name), 'wb') as f:

@@ -8,35 +8,36 @@ import random
 
 
 class RIR:
-    def __init__(self):        
+    def __init__(self, room):        
         self.marray = np.array([
                     [-0.12, 0, 0],
                     [-0.04, 0, 0],
                     [0.04, 0, 0],
                     [0.12, 0, 0]
                     ])
-        self.dist = np.array([1, 2])
         self.doa_range = range(0, 185, 5)
         self.rir_length = 4096
+
+        self.room_dim = room['dim']
+        self.rt60 = room['rt60']
+        self.mcenter = room['mcenter']
+        self.room_num = room['num']
+        self.dist = room['dist']
+        self.rirs = np.zeros((len(self.doa_range), 
+                              len(self.dist), 
+                              self.rir_length, 
+                              len(self.marray)))
         
     def _is_ok(self, x, y):
         if x <= 0 or y <= 0 or x >= self.room_dim[0] or y >= self.room_dim[1]:
             return False
         return True
         
-    def generate_rir(self, room):
+    def generate_rir(self, save_dir):
         # (DOA, dist, rir, channel)
         # 1 rir.npy per room
-        self.room_dim = room['dim']
-        self.rt60 = room['rt60']
-        self.mcenter = room['mcenter']
-        self.room_num = room['num']
-        self.rirs = np.zeros((len(self.doa_range), 
-                              len(self.dist)+1, 
-                              self.rir_length, 
-                              len(self.marray)))
         
-        for d in self.dist:
+        for i, d in enumerate(self.dist):
             for deg in self.doa_range:
                 th = np.deg2rad(deg)
 
@@ -55,21 +56,19 @@ class RIR:
                     )
                 
                 doa_class = deg // 5
-                self.rirs[doa_class, d, :, :] = h
+                self.rirs[doa_class, i, :, :] = h
         
-        save_dir = './files'
         save_name = 'rir%d.npy' % self.room_num
         np.save(os.path.join(save_dir, save_name), self.rirs)
         print("Saved", save_name)
-        
-        
-def main():
-    
-    with open('./data/train/config.json', 'r') as f:
+
+
+def call_rir(dir):
+    with open('%s/config.json' % dir, 'r') as f:
         config = json.load(f)
     
-    rir = RIR()
     for n in range(len(config)):
+
         r = config[str(n+1)]
         
         r["dim"] = np.array([float(i) for i in r['dim'].split()])
@@ -78,11 +77,22 @@ def main():
         z = random.uniform(1.5, 1.8)
         r["mcenter"] = np.array([x, y, z])
         r["num"] = n+1
+        r["dist"] = np.array([float(i) for i in r["dist"].split()])
         
-        rir.generate_rir(r)
-        
-    
+        rir = RIR(r)
+        rir.generate_rir(dir)
 
+        
+def main():
+    
+    train_rir_dir = "./rir_dir/train"
+    valid_rir_dir = "./rir_dir/validation"
+    test_rir_dir = "./rir_dir/test"
+
+    # call_rir(train_rir_dir)
+    call_rir(valid_rir_dir)
+    # call_rir(test_rir_dir)
+    
         
 if __name__ == '__main__':
     main()

@@ -20,7 +20,7 @@ else:
     
 
 batch_size = 16
-train_path = "./phasemap_samples2"
+train_path = "/root/mydir/hdd/training_data/phasemap"
 
 train_dataset = PhaseMapDataset(train_path)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
