@@ -6,8 +6,10 @@ import random
 import scipy.signal as ss
 import torch
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-signal_path = './signal_samples'
+
+signal_path = '/root/mydir/hdd/training_data/mic_signal'
 train_data = glob.glob(os.path.join(signal_path, '*.pickle'))
 data_size = len(train_data)
 
@@ -19,7 +21,7 @@ s_len = fs*2
 n_doa_class = 37
 
 name = 1
-for data_path in train_data:    # for 1 set of signals
+for data_path in tqdm(train_data):    # for 1 set of signals
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     
@@ -28,20 +30,10 @@ for data_path in train_data:    # for 1 set of signals
     signal_size = signals.shape[0]
     index = random.choice(range(signal_size - s_len))
     clipped_signals = signals[index : index + s_len, :]
-    clipped_signals = clipped_signals.T
-    
-    # 1.5. add noise
-    snr = 30
-    noise_audio = np.random.standard_normal(clipped_signals.shape)
-    
-    clean_db = 10 * np.log10(np.mean(clipped_signals**2)+1e-4)
-    noise_db = 10 * np.log10(np.mean(noise_audio**2)+1e-4)
-    noise = np.sqrt(10**((clean_db - noise_db - snr) / 10)) * noise_audio
-    noisy_signals = clipped_signals + noise
-    
+    clipped_signals = clipped_signals.T    
     
     # 2. STFT
-    f, t, stft_signal = ss.stft(x=noisy_signals,      # (4, 257, 126) (channel, freq, time)
+    f, t, stft_signal = ss.stft(x=clipped_signals,      # (4, 257, 126) (channel, freq, time)
                                 fs=fs, 
                                 nperseg=win_size, 
                                 nfft=Nf, 
@@ -70,10 +62,10 @@ for data_path in train_data:    # for 1 set of signals
     
     # 5. phase map & target dump
     output = (phase_map, target)
-    output_path = './phasemap_samples2'
+    output_path = '/root/mydir/hdd/trainind_data/phasemap'
     if not os.path.exists(output_path): 
         os.makedirs(output_path)
-    with open('%s/%d_%ddB.pickle' % (output_path, name, snr), 'wb') as f:
+    with open('%s/%d.pickle' % (output_path, name), 'wb') as f:
         pickle.dump(output, f)
     
     name += 1
