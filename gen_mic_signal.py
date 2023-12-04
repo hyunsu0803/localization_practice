@@ -49,39 +49,72 @@ class MicSignal:
         
         return noisy_signals
     
-    
-    def conv_n_add(self, speeches, rooms, save_path):
-        speech_num = 1
-        for s in tqdm(speeches):
-            speech, fs = sf.read(s)
-            anechoic_vad = self._gen_anechoic_vad(speech, fs)
-            
-            signal_num = 1
-            for room in rooms:
-                rirs = np.load(room)
-                for dist in range(rirs.shape[1]):
-                    for doa in range(37):
-                        # rir convolution
-                        h = rirs[doa, dist, :, :]
-                        signals = ss.convolve(h[:, None, :], speech[:, None, None])
-                        signals = signals.squeeze()
-                        # noise addition
-                        signals = self._add_noise(signals)
-                        # gen signal vad
-                        signal_vad = self._gen_mic_signal_vad(h[:, 0], anechoic_vad, len(signals[:, 0]))
 
-                        # save datadict
-                        datadict = {}
-                        datadict["doa"] = doa * 5
-                        datadict["signals"] = signals
-                        datadict["vad"] = signal_vad
+    def conv_n_add(self, s, rooms, save_path):
+        speech_name = s.split('/')[-1].split('.')[0]
+        speech, fs = sf.read(s)
+        anechoic_vad = self._gen_anechoic_vad(speech, fs)
+        
+        signal_num = 1
+        for room in rooms:
+            rirs = np.load(room)
+            for dist in range(rirs.shape[1]):
+                for doa in range(37):
+                    # rir convolution
+                    h = rirs[doa, dist, :, :]
+                    signals = ss.convolve(h[:, None, :], speech[:, None, None])
+                    signals = signals.squeeze()
+                    # noise addition
+                    signals = self._add_noise(signals)
+                    # gen signal vad
+                    signal_vad = self._gen_mic_signal_vad(h[:, 0], anechoic_vad, len(signals[:, 0]))
+
+                    # save datadict
+                    datadict = {}
+                    datadict["doa"] = doa * 5
+                    datadict["signals"] = signals
+                    datadict["vad"] = signal_vad
+                    
+                    file_path = "%s/%d_%d.pickle" % (save_path, speech_name, signal_num)
+                    with open(file_path, 'wb') as f:
+                        pickle.dump(datadict, f)
+                    
+                    signal_num += 1
+            
+    
+    
+    # def conv_n_add(self, speeches, rooms, save_path):
+    #     speech_num = 1
+    #     for s in tqdm(speeches):
+    #         speech, fs = sf.read(s)
+    #         anechoic_vad = self._gen_anechoic_vad(speech, fs)
+            
+    #         signal_num = 1
+    #         for room in rooms:
+    #             rirs = np.load(room)
+    #             for dist in range(rirs.shape[1]):
+    #                 for doa in range(37):
+    #                     # rir convolution
+    #                     h = rirs[doa, dist, :, :]
+    #                     signals = ss.convolve(h[:, None, :], speech[:, None, None])
+    #                     signals = signals.squeeze()
+    #                     # noise addition
+    #                     signals = self._add_noise(signals)
+    #                     # gen signal vad
+    #                     signal_vad = self._gen_mic_signal_vad(h[:, 0], anechoic_vad, len(signals[:, 0]))
+
+    #                     # save datadict
+    #                     datadict = {}
+    #                     datadict["doa"] = doa * 5
+    #                     datadict["signals"] = signals
+    #                     datadict["vad"] = signal_vad
                         
-                        file_path = "%s/%d_%d.pickle" % (save_path, speech_num, signal_num)
-                        with open(file_path, 'wb') as f:
-                            pickle.dump(datadict, f)
+    #                     file_path = "%s/%d_%d.pickle" % (save_path, speech_num, signal_num)
+    #                     with open(file_path, 'wb') as f:
+    #                         pickle.dump(datadict, f)
                         
-                        signal_num += 1
-            speech_num += 1
+    #                     signal_num += 1
+    #         speech_num += 1
             
 
 def call_micsignal(speeches, rooms, path):
@@ -104,16 +137,16 @@ def call_micsignal(speeches, rooms, path):
 def main():
     
     # training data generation
-    train_speeches = "/root/mydir/hdd/librispeech_360/LibriSpeech/train-clean-100/**/*.flac"
+    train_speeches = "/root/mydir/hdd/librispeech/LibriSpeech/train-clean-100/**/*.flac"
     train_rooms = "rir_dir/train/*.npy"
     save_path = "/root/mydir/hdd/training_data/mic_signal"
-    # call_micsignal(train_speeches, train_rooms, save_path)
+    call_micsignal(train_speeches, train_rooms, save_path)
 
     # validation data generation
-    train_speeches = "/root/mydir/hdd/librispeech_360/LibriSpeech/dev-clean/**/*.flac"
+    train_speeches = "/root/mydir/hdd/librispeech/LibriSpeech/dev-clean/**/*.flac"
     train_rooms = "rir_dir/validation/*.npy"
-    save_path = "/root/mydir/hdd/vadid_data/mic_signal"
-    call_micsignal(train_speeches, train_rooms, save_path)
+    save_path = "/root/mydir/hdd/validation_data/mic_signal"
+    # call_micsignal(train_speeches, train_rooms, save_path)
 
     # test data generation
     
